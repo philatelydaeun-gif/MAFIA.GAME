@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="현재 구현된 마피아 게임의 규칙, 역할 설정, 게임 진행 방식에 대한 단일 기준 정의서">
+<title>마피아 게임 · SoT 정의서</title>
+<style>
+:root{color-scheme:light;--bg:#f4f2ee;--paper:#fff;--ink:#25232b;--muted:#6e6a76;--line:#e4e0d9;--red:#a92331;--red-soft:#fff0f1;--green:#236c4b;--green-soft:#edf8f1;--amber:#8b5a11;--amber-soft:#fff6e6;--purple:#59418a;--purple-soft:#f4efff;--shadow:0 12px 36px #302a2410}
+@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#17151c;--paper:#211e28;--ink:#f0edf4;--muted:#aaa4b2;--line:#393440;--red:#f07883;--red-soft:#351e24;--green:#75d2a0;--green-soft:#1d3028;--amber:#e0b15f;--amber-soft:#352b1c;--purple:#c2a9fa;--purple-soft:#2a2338;--shadow:0 12px 36px #0003}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:18px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.72 system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+a{color:var(--red);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{width:min(1120px,100% - 32px);margin:0 auto;padding:36px 0 72px}
+.hero{padding:42px 44px;background:linear-gradient(135deg,#461b27,#8e2635 58%,#b4484e);color:#fff;border-radius:26px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:280px;height:280px;border:1px solid #ffffff22;border-radius:50%;right:-65px;top:-105px;box-shadow:0 0 0 28px #ffffff0a,0 0 0 58px #ffffff08}
+.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;opacity:.76;font-weight:800}
+h1{font-size:clamp(34px,6vw,58px);line-height:1.13;letter-spacing:-.045em;margin:12px 0}
+.hero p{max-width:740px;margin:12px 0 0;color:#ffebed}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.pill{display:inline-flex;align-items:center;padding:5px 11px;border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:700;background:var(--paper);color:var(--muted)}
+.hero .pill{background:#ffffff16;border-color:#ffffff30;color:#fff}
+.layout{display:grid;grid-template-columns:245px minmax(0,1fr);gap:22px;margin-top:24px;align-items:start}
+nav,.panel{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+nav{position:sticky;top:16px;padding:18px}
+nav strong{display:block;font-size:13px;margin:0 0 9px}
+nav a{display:block;padding:6px 9px;border-radius:8px;color:var(--muted);font-size:13px}
+nav a:hover{background:var(--bg);color:var(--ink);text-decoration:none}
+main{min-width:0}
+.panel{padding:28px;margin-bottom:16px}
+h2{font-size:25px;line-height:1.3;letter-spacing:-.025em;margin:0 0 14px}
+h3{font-size:18px;line-height:1.4;margin:25px 0 9px}
+h4{font-size:15px;margin:18px 0 6px}
+p{margin:8px 0 12px}
+.lead{font-size:17px;color:var(--muted)}
+.section-no{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;margin-right:8px;background:var(--red-soft);color:var(--red);font-size:13px;vertical-align:2px}
+.callout{border-left:4px solid var(--red);padding:13px 15px;border-radius:0 10px 10px 0;background:var(--red-soft);margin:14px 0}
+.callout.warn{border-color:var(--amber);background:var(--amber-soft)}
+.callout.ok{border-color:var(--green);background:var(--green-soft)}
+.callout p:last-child{margin-bottom:0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.modecard,.rolecard{border:1px solid var(--line);border-radius:13px;padding:15px;background:var(--paper)}
+.modecard h3,.rolecard h3{margin:0 0 5px}
+.modecard p,.rolecard p{margin:5px 0 0;color:var(--muted);font-size:14px}
+.tagrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--bg);color:var(--muted);font-weight:700}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:12px 0}
+table{width:100%;border-collapse:collapse;min-width:570px;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);background:var(--bg);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:750;white-space:nowrap}
+.flow{counter-reset:step;list-style:none;padding:0;margin:16px 0}
+.flow li{counter-increment:step;position:relative;margin:0 0 10px;padding:13px 14px 13px 52px;border:1px solid var(--line);border-radius:12px}
+.flow li:before{content:counter(step);position:absolute;left:14px;top:12px;display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--red-soft);color:var(--red);font-weight:800}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.role-group{margin-top:22px}
+.role-group:first-of-type{margin-top:10px}
+.rolecard{height:100%}
+.rolecard .kind{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.rolecard .desc{font-size:14px;margin-top:8px}
+.rolecard .limit{font-size:12px;color:var(--purple);font-weight:750;margin-top:9px}
+.two-col{columns:2;column-gap:28px}
+.two-col li{break-inside:avoid}
+code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.92em;background:var(--bg);padding:2px 5px;border-radius:5px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:18px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.wrap{width:min(100% - 20px,720px);padding-top:12px}.hero{padding:30px 24px;border-radius:19px}nav{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;padding:14px}nav strong{grid-column:1/-1}.panel{padding:21px}.grid{grid-template-columns:1fr}.two-col{columns:1}}
+@media print{body{background:#fff;color:#222;font-size:11pt}.wrap{width:100%;padding:0}.hero{box-shadow:none;border-radius:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.layout{display:block}nav{display:none}.panel{box-shadow:none;break-inside:avoid;border-color:#ccc}.modecard,.rolecard{break-inside:avoid}a{color:inherit}footer{padding:8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Single Source of Truth · Game Specification</div>
+    <h1>마피아 게임<br>SoT 정의서</h1>
+    <p>현재 게임 파일에 구현된 모드, 설정 범위, 역할 능력, 라운드 진행 및 승리 판정을 한곳에 정리한 기준 문서입니다. 별도 표시가 없다면 아래 내용은 현재 코드 동작을 설명합니다.</p>
+    <div class="meta"><span class="pill">기준: 현재 구현</span><span class="pill">기기 1대 · 순차 전달</span><span class="pill">최종 정리: 2026-10-31</span></div>
+  </header>
+
+  <div class="layout">
+    <nav aria-label="문서 목차">
+      <strong>문서 목차</strong>
+      <a href="#purpose">문서 기준</a>
+      <a href="#modes">게임 모드</a>
+      <a href="#settings">공통 설정</a>
+      <a href="#flow">진행 방식</a>
+      <a href="#base-roles">기본 역할</a>
+      <a href="#extended-roles">확장 역할</a>
+      <a href="#lover">연인 마피아</a>
+      <a href="#doctor">의사 마피아</a>
+      <a href="#wins">승리·종료 규칙</a>
+      <a href="#known-gaps">확인 필요 사항</a>
+    </nav>
+
+    <main>
+      <section class="panel" id="purpose">
+        <h2><span class="section-no">00</span>문서 기준</h2>
+        <p class="lead">이 문서는 디자인 의도나 향후 계획이 아니라, 현재 실행 코드에서 확인되는 동작을 기준으로 작성했습니다.</p>
+        <div class="callout ok"><b>SoT 원칙</b><p>화면의 설명 문구와 실제 코드가 다를 경우, 실제 실행 동작을 본문에 적고 차이는 <a href="#known-gaps">확인 필요 사항</a>에 기록합니다. 이 문서 자체는 게임 규칙이나 코드를 변경하지 않습니다.</p></div>
+        <p class="small muted">게임 파일: <code>마피아 게임.html</code> · 플레이 형태: 한 기기에서 각 플레이어에게 차례로 화면을 전달하는 로컬 게임</p>
+      </section>
+
+      <section class="panel" id="modes">
+        <h2><span class="section-no">01</span>게임 모드</h2>
+        <div class="grid">
+          <article class="modecard"><h3>기본 (바닐라)</h3><p>마피아·의사·경찰을 설정하고 나머지 인원은 시민으로 채웁니다. 밤 능력과 낮 투표를 반복합니다.</p><div class="tagrow"><span class="tag">4–20명</span><span class="tag">추가 역할 없음</span></div></article>
+          <article class="modecard"><h3>확장 모드</h3><p>기본 역할에 기자, 이장, 저격수 등 추가 역할을 선택적으로 넣습니다. 역할은 정해진 배정 규칙에 따라 섞입니다.</p><div class="tagrow"><span class="tag">4–20명</span><span class="tag">커플 쌍 포함</span></div></article>
+          <article class="modecard"><h3>돌팔이 모드</h3><p>확장 역할을 포함하는 모드입니다. 능력 판정과 투표 처형 판정 등이 각각 50% 확률로 성공하도록 처리됩니다.</p><div class="tagrow"><span class="tag">4–20명</span><span class="tag">확률 판정</span></div></article>
+          <article class="modecard"><h3>연인 마피아</h3><p>여섯 연인 역할을 배정하고, 매일 달라지는 연인 관계와 비공개 공격을 견뎌 목표 생존 인원 또는 설정 일수에 도달합니다.</p><div class="tagrow"><span class="tag">2–20명</span><span class="tag">생존 목표</span></div></article>
+          <article class="modecard"><h3>의사 마피아</h3><p>마피아 없이 여덟 의사 역할을 새 게임마다 플레이어 번호에 무작위 배정합니다. 숨겨진 공격에 맞서 매일 역할 능력으로 생존자를 지킵니다.</p><div class="tagrow"><span class="tag">2–20명</span><span class="tag">생존 목표</span></div></article>
+        </div>
+      </section>
+
+      <section class="panel" id="settings">
+        <h2><span class="section-no">02</span>설정 범위와 초기값</h2>
+        <h3>기본·확장·돌팔이 모드</h3>
+        <div class="table-wrap"><table><thead><tr><th>설정</th><th>범위</th><th>초기값</th><th>비고</th></tr></thead><tbody>
+          <tr><td>참여 인원</td><td>4–20</td><td>6</td><td>마피아·의사·경찰 역할 수의 합보다 많아야 시작할 수 있습니다.</td></tr>
+          <tr><td>마피아</td><td>1–9</td><td>1</td><td>최소 1명</td></tr>
+          <tr><td>의사</td><td>0–5</td><td>1</td><td>연속해서 같은 사람을 치료할 수 없습니다.</td></tr>
+          <tr><td>경찰</td><td>0–5</td><td>1</td><td>조사 횟수 제한 설정 가능</td></tr>
+          <tr><td>추가 역할</td><td>역할별 0–2 또는 0–3</td><td>전부 0</td><td>확장·돌팔이 모드에서 설정</td></tr>
+          <tr><td>능력 사용 횟수</td><td>0–20</td><td>기본 의사·경찰은 0, 추가 역할은 1</td><td>0은 무제한으로 표시됩니다.</td></tr>
+          <tr><td>투표 방식</td><td>공개 / 비밀</td><td>공개</td><td>공개는 투표자와 대상 공개, 비밀은 득표수만 공개</td></tr>
+          <tr><td>본인 투표</td><td>허용 / 불허</td><td>불허</td><td>불허 시 자기 자신은 후보에서 제외</td></tr>
+          <tr><td>사망자 직업</td><td>공개 / 비공개</td><td>비공개</td><td>사망 결과와 처형 결과 표시를 제어</td></tr>
+        </tbody></table></div>
+        <h3>확장 역할 최대 수</h3>
+        <div class="table-wrap"><table><thead><tr><th>역할</th><th>최대 배정 수</th><th>역할</th><th>최대 배정 수</th></tr></thead><tbody>
+          <tr><td>기자</td><td>3</td><td>이장</td><td>2</td></tr>
+          <tr><td>저격수</td><td>2</td><td>영매</td><td>2</td></tr>
+          <tr><td>광대</td><td>2</td><td>건달</td><td>3</td></tr>
+          <tr><td>테러리스트</td><td>3</td><td>탐정</td><td>3</td></tr>
+          <tr><td>미치광이 의사</td><td>3</td><td>문지기</td><td>3</td></tr>
+          <tr><td>커플 쌍</td><td>2쌍</td><td>시민</td><td>남는 인원</td></tr>
+        </tbody></table></div>
+        <h3>연인 마피아 / 의사 마피아</h3>
+        <p>두 모드는 공통으로 인원 2–20명, 일수 1–30일, 생존 목표 1명부터 현재 인원까지 설정합니다. 인원 기본값은 6명, 목표 인원은 2명, 일수는 10일입니다.</p>
+        <p class="small muted">연인 마피아는 6개 역할, 의사 마피아는 8개 역할을 무작위 배정합니다. 각 역할을 먼저 한 번씩 배정하고 인원이 역할 수를 초과하면 추가 역할은 무작위 중복입니다.</p>
+      </section>
+
+      <section class="panel" id="flow">
+        <h2><span class="section-no">03</span>게임 진행 방식</h2>
+        <h3>기기 전달과 정보 보호</h3>
+        <p>각 역할의 행동 전에 화면을 해당 플레이어에게 전달합니다. 전달 화면은 다른 플레이어가 화면을 보지 않도록 안내합니다. 각 플레이어는 본인에게 공개된 역할 정보와 선택지만 확인합니다.</p>
+        <h3>기본·확장·돌팔이 한 라운드</h3>
+        <ol class="flow">
+          <li><b>밤 능력 선택</b><br>생존 플레이어가 차례로 행동합니다. 문지기는 다른 역할보다 먼저 차례를 받으며, 그 외에는 플레이어 번호 순입니다. 횟수를 다 쓴 역할은 능력을 건너뜁니다.</li>
+          <li><b>밤 결과 처리</b><br>마피아 공격, 의사 치료, 미치광이 의사, 문지기 보호, 저격수 등 밤 효과를 처리합니다. 공격 동률은 동률 대상 중 무작위로 하나를 선택합니다.</li>
+          <li><b>아침 결과 공개</b><br>사망자, 기자의 기사, 탐정의 추리(O/X), 건달의 발언·투표 제한만 표시합니다. 사망자 직업 공개 설정이 켜져 있으면 직업도 표시합니다.</li>
+          <li><b>낮 토론과 투표</b><br>생존하고 투표 제한을 받지 않은 플레이어가 투표하거나 기권합니다. 최다 득표가 단독이고 기권보다 많을 때 처형 후보가 생깁니다. 그 외에는 처형되지 않습니다.</li>
+          <li><b>특수 판정 후 다음 라운드</b><br>이장이 권한을 사용하면 해당 투표는 무효가 되고 재투표합니다. 처형·테러리스트·광대·승리 조건을 처리하고, 게임이 계속되면 다음 밤으로 이동합니다.</li>
+        </ol>
+        <div class="callout warn"><b>돌팔이 모드 확률</b><p>능력 성공 여부와 투표 처형은 50% 판정을 거칩니다. 능력 성공 여부는 해당 능력 사용자의 차례에만 표시하며, 아침 결과에는 공개하지 않습니다. 밤 능력 판정에 실패하면 효과가 없고 사용 횟수도 소모하지 않습니다. 투표 처형 판정이 실패하면 지목된 플레이어는 살아남습니다.</p></div>
+        <h3>연인 마피아 / 의사 마피아 순서</h3>
+        <p>연인 마피아와 의사 마피아는 매일 생존한 플레이어를 <b>1번부터 번호순</b>으로 진행하며 사망자는 건너뜁니다. 의사 마피아는 모든 의사가 선택을 마친 뒤 능력 효과와 숨겨진 공격을 한 번에 처리합니다. 도둑 의사에게 의료품을 도둑맞은 플레이어도 자신의 차례에 능력을 선택하지만, 그 효과는 적용되지 않으며 도난 사실을 알 수 없습니다.</p>
+      </section>
+
+      <section class="panel" id="base-roles">
+        <h2><span class="section-no">04</span>기본 역할</h2>
+        <div class="grid">
+          <article class="rolecard"><div class="kind">적대 진영 · 기본</div><h3>마피아</h3><p class="desc">밤마다 제거할 대상을 선택합니다. 다른 마피아가 누구인지 확인할 수 있습니다.</p><div class="limit">능력 횟수: 기본 무제한</div></article>
+          <article class="rolecard"><div class="kind">시민 진영 · 기본</div><h3>의사</h3><p class="desc">밤마다 한 명을 치료해 마피아의 공격에서 보호합니다. 직전 밤에 치료한 대상은 다시 선택할 수 없습니다.</p><div class="limit">능력 횟수: 기본 무제한</div></article>
+          <article class="rolecard"><div class="kind">시민 진영 · 기본</div><h3>경찰</h3><p class="desc">밤마다 한 명이 마피아인지 조사합니다. 자신은 조사할 수 없습니다.</p><div class="limit">능력 횟수: 기본 무제한</div></article>
+          <article class="rolecard"><div class="kind">시민 진영 · 기본</div><h3>시민</h3><p class="desc">밤 능력은 없습니다. 토론과 투표로 마피아를 찾아냅니다.</p></article>
+        </div>
+      </section>
+
+      <section class="panel" id="extended-roles">
+        <h2><span class="section-no">05</span>확장 역할</h2>
+        <div class="grid">
+          <article class="rolecard"><div class="kind">시민 진영 · 밤</div><h3>기자</h3><p class="desc">밤에 한 명의 직업을 모두에게 공개합니다. 기자가 그 밤에 사망하면 기사는 발동하지 않습니다.</p><div class="limit">기본 사용 횟수: 1회</div></article>
+          <article class="rolecard"><div class="kind">시민 진영 · 투표</div><h3>이장</h3><p class="desc">투표 결과 공개 뒤 권한을 사용해 현재 결과를 무효화하고 재투표합니다. 사용하면 이장임이 공개됩니다.</p><div class="limit">기본 사용 횟수: 1회</div></article>
+          <article class="rolecard"><div class="kind">시민 진영 · 밤</div><h3>저격수</h3><p class="desc">밤에 한 명을 저격합니다. 대상이 마피아면 대상이 사망하고, 아니면 저격수가 사망합니다.</p><div class="limit">기본 사용 횟수: 1회</div></article>
+          <article class="rolecard"><div class="kind">시민 진영 · 밤</div><h3>영매</h3><p class="desc">밤에 사망자 한 명을 선택해 직업을 확인합니다. 확인할 사망자가 없으면 대상을 선택할 수 없습니다.</p><div class="limit">기본 사용 횟수: 1회</div></article>
+          <article class="rolecard"><div class="kind">개인 승리 · 처형</div><h3>광대</h3><p class="desc">투표로 처형되면 광대가 승리합니다. 돌팔이 모드에서는 승리 능력에도 확률 판정이 적용됩니다.</p><div class="limit">기본 승리 판정 횟수: 1회</div></article>
+          <article class="rolecard"><div class="kind">시민 진영 · 밤</div><h3>건달</h3><p class="desc">밤에 한 명을 지정해 다음 날 발언과 투표를 제한합니다. 제한된 플레이어는 해당 투표에서 건너뜁니다.</p><div class="limit">기본 사용 횟수: 1회</div></article>
+          <article class="rolecard"><div class="kind">개인 선택 · 처형</div><h3>테러리스트</h3><p class="desc">투표로 처형되면 살아 있는 플레이어 한 명을 지목해 함께 죽이려 합니다. 문지기 효과가 있으면 실제 효과 대상이 달라질 수 있습니다.</p><div class="limit">기본 사용 횟수: 1회</div></article>
+          <article class="rolecard"><div class="kind">시민 진영 · 밤</div><h3>탐정</h3><p class="desc">밤에 한 명이 그날 밤 능력을 사용했는지 조사합니다. 다음 아침에 생존한 탐정의 조사 결과(O/X)를 모두에게 공개합니다.</p><div class="limit">기본 사용 횟수: 1회</div></article>
+          <article class="rolecard"><div class="kind">시민 진영 · 밤</div><h3>미치광이 의사</h3><p class="desc">한 명을 지목합니다. 그 대상이 그날 마피아 공격 대상이면 살리고, 아니면 죽입니다.</p><div class="limit">기본 사용 횟수: 1회</div></article>
+          <article class="rolecard"><div class="kind">시민 진영 · 밤</div><h3>문지기</h3><p class="desc">한 명을 지정합니다. 그 대상에게 향하는 효과를 문지기가 대신 받습니다. 밤 차례는 문지기가 먼저입니다.</p><div class="limit">기본 사용 횟수: 1회</div></article>
+          <article class="rolecard"><div class="kind">별도 승리 조건</div><h3>커플</h3><p class="desc">확장 모드에서 두 명이 한 쌍으로 배정됩니다. 서로의 정체를 확인합니다. 한 명이 죽으면 다른 한 명도 함께 죽는 효과가 있으며, 진영 승리 시 둘 다 생존해 있으면 커플 승리 판정이 가능합니다.</p><div class="limit">설정 단위: 1쌍</div></article>
+        </div>
+      </section>
+
+      <section class="panel" id="lover">
+        <h2><span class="section-no">06</span>연인 마피아 역할과 규칙</h2>
+        <p>여섯 역할은 <b>힘 센 연인, 가짜 연인, 줄리엣, 로미오, 평범한 연인, 기적의 연인</b>입니다. 하루가 시작될 때 생존자끼리 무작위로 짝을 다시 정하고 관계를 공개합니다. 짝이 홀수로 남으면 한 명은 솔로입니다.</p>
+        <div class="grid">
+          <article class="rolecard"><div class="kind">자동 보호</div><h3>힘 센 연인</h3><p class="desc">자신의 연인이 공격받으면 대신 보호합니다. 자신을 지키는 능력은 없습니다.</p></article>
+          <article class="rolecard"><div class="kind">대신 사망</div><h3>가짜 연인</h3><p class="desc">자신이 공격 대상이면 연인이 대신 죽습니다.</p></article>
+          <article class="rolecard"><div class="kind">선택 능력</div><h3>줄리엣</h3><p class="desc">밤에 죽은 척해 자신을 향한 공격을 피할 수 있습니다. 능력을 쓴 밤에 연인이 죽으면 줄리엣도 자결합니다.</p><div class="limit">사용 횟수: 제한 없음</div></article>
+          <article class="rolecard"><div class="kind">선택 능력</div><h3>로미오</h3><p class="desc">오늘의 연인을 선택해 수면제를 사용합니다. 모든 선택이 끝난 뒤 효과를 처리하며, 잠든 연인은 공격을 피하고 그날 선택한 능력 효과가 적용되지 않습니다.</p><div class="limit">사용 횟수: 게임당 2회</div></article>
+          <article class="rolecard"><div class="kind">연쇄 사망</div><h3>평범한 연인</h3><p class="desc">연인이 죽으면 자신도 함께 죽습니다.</p></article>
+          <article class="rolecard"><div class="kind">연속 인연 보상</div><h3>기적의 연인</h3><p class="desc">같은 사람과 이틀 연속 짝이 되면 그 연인에게 공격을 한 번 막는 두꺼운 책을 줍니다. 공격을 막으면 책 한 권을 소비합니다.</p></article>
+        </div>
+        <h3>하루 진행과 종료</h3>
+        <ul>
+          <li>매일 살아 있는 번호 순으로 차례를 진행합니다. 홀수 날 솔로 플레이어는 능력을 사용할 수 없습니다.</li>
+          <li>공격 대상은 게임 시작 시 설정 일수만큼 미리 무작위로 정합니다. 플레이어는 공격 대상을 알 수 없습니다.</li>
+          <li>공격 처리 후 생존 인원이 목표보다 적으면 실패합니다. 설정 일수에 도달하고 목표 인원 이상 생존하면 성공합니다.</li>
+        </ul>
+      </section>
+
+      <section class="panel" id="doctor">
+        <h2><span class="section-no">07</span>의사 마피아 역할과 규칙</h2>
+        <p>마피아 없이 아래 여덟 의사 역할을 새 게임마다 플레이어 번호에 무작위 배정합니다. 매일 생존자를 1번부터 번호순으로 진행하며, 모든 역할의 선택 결과를 모아 그날 밤 해결 단계에서 한 번에 적용합니다.</p>
+        <div class="grid">
+          <article class="rolecard"><div class="kind">방해 + 치료</div><h3>도둑 의사</h3><p class="desc">두 대상을 선택합니다. 첫 번째 대상의 의료품을 훔쳐 두 번째 대상을 치료합니다. 의료품을 빼앗긴 플레이어도 능력을 선택하지만 그 효과는 적용되지 않으며, 도난 사실을 알 수 없습니다.</p></article>
+          <article class="rolecard"><div class="kind">치료 또는 독</div><h3>역병 의사</h3><p class="desc">매일 순서가 무작위인 치료약과 독극물 중 하나를 골라 한 명에게 사용합니다.</p></article>
+          <article class="rolecard"><div class="kind">치료</div><h3>평범한 의사</h3><p class="desc">선택한 한 명을 치료해 마피아의 공격에서 보호합니다.</p></article>
+          <article class="rolecard"><div class="kind">확률 치료</div><h3>돌팔이 의사</h3><p class="desc">치료 대상을 선택합니다. 능력은 50% 확률로 성공하며, 성공 여부는 본인 차례에만 확인할 수 있습니다. 실패하면 치료 효과가 없습니다.</p></article>
+          <article class="rolecard"><div class="kind">치료 · 휴식</div><h3>수혈 의사</h3><p class="desc">선택한 한 명을 치료합니다. 사용한 다음 날은 쉬며, 그다음 날 다시 행동할 수 있습니다.</p></article>
+          <article class="rolecard"><div class="kind">효과 교환</div><h3>차트 교환 의사</h3><p class="desc">두 명을 선택해 그날 두 대상에게 향한 효과를 서로 교환합니다. 숨겨진 공격도 교환 대상 효과에 포함됩니다.</p></article>
+          <article class="rolecard"><div class="kind">보호 · 대가</div><h3>희생 의사</h3><p class="desc">사용 여부를 선택하고 한 명을 보호합니다. 숨겨진 공격 대상이 다른 치료를 받지 못하면 희생 의사가 대신 죽으며 공격을 막습니다. 공격 대상이 다른 의사의 치료를 받으면 희생 의사는 평범한 의사로 전직합니다.</p></article>
+          <article class="rolecard"><div class="kind">조건부 생사</div><h3>미치광이 의사</h3><p class="desc">한 명을 선택합니다. 그 대상이 숨겨진 공격 대상이면 치료하고, 아니면 독 효과로 죽입니다.</p></article>
+        </div>
+        <h3>하루 진행과 종료</h3>
+        <ul>
+          <li>공격 대상은 게임 시작 시 설정 일수만큼 미리 무작위로 정하며, 각 날짜의 대상은 공개되지 않습니다.</li>
+          <li>모든 역할은 매일 행동합니다. 희생 의사는 사용을 건너뛸 수 있고, 수혈 의사는 휴식일에 행동을 건너뜁니다.</li>
+          <li>밤 효과를 모두 해결한 뒤 생존 인원이 목표보다 적으면 실패합니다. 설정 일수에 도달하고 목표 인원 이상 생존하면 성공합니다.</li>
+        </ul>
+      </section>
+
+      <section class="panel" id="wins">
+        <h2><span class="section-no">08</span>승리·종료 규칙 요약</h2>
+        <div class="table-wrap"><table><thead><tr><th>모드</th><th>승리 / 종료 조건</th></tr></thead><tbody>
+          <tr><td>기본·확장·돌팔이</td><td>마피아가 모두 사망하면 시민 진영 승리. 생존 마피아 수가 생존 비마피아 수 이상이면 마피아 진영 승리. 광대는 투표 처형 시 개인 승리.</td></tr>
+          <tr><td>커플</td><td>진영 승리 판정 시 커플 쌍이 모두 생존해 있으면 커플 승리 판정을 진행합니다. 돌팔이 모드에서는 관련 확률 판정의 성공 여부가 추가로 적용됩니다.</td></tr>
+          <tr><td>연인 마피아</td><td>생존 인원이 설정 목표 미만이면 실패. 설정 일수까지 목표 인원 이상 생존하면 성공.</td></tr>
+          <tr><td>의사 마피아</td><td>생존 인원이 설정 목표 미만이면 실패. 설정 일수까지 목표 인원 이상 생존하면 성공.</td></tr>
+        </tbody></table></div>
+        <p class="small muted">기본·확장·돌팔이 모드는 아침과 투표 뒤 승리 여부를 확인합니다. 별도 승리 역할인 광대가 성공적으로 처형되면 광대 승리를 우선 표시합니다.</p>
+      </section>
+
+      <section class="panel" id="known-gaps">
+        <h2><span class="section-no">09</span>구현 확인 필요 사항</h2>
+        <p>아래 항목은 현재 코드와 화면 안내의 차이 또는 플레이 규칙에 영향을 줄 수 있는 동작입니다. 합의된 규칙이 확정되기 전까지는 의도된 동작으로 단정하지 않습니다.</p>
+        <div class="callout warn">
+          <h3>1. 행동 선택과 효과 처리</h3>
+          <p>연인 마피아와 의사 마피아의 행동은 모든 플레이어가 선택한 뒤 결과를 처리합니다. 연인 마피아에서 잠든 플레이어와 의사 마피아에서 의료품을 도둑맞은 플레이어도 자신의 차례에 선택할 수 있지만, 해당 능력의 효과는 적용되지 않습니다.</p>
+        </div>
+        <div class="callout warn">
+          <h3>2. 미리 정하는 공격 대상과 사망자 재추첨</h3>
+          <p>두 전용 모드는 게임 시작 때 각 날짜의 공격 대상을 모든 참가자 중에서 무작위로 미리 생성합니다. 이미 사망한 사람도 이후 날짜에 다시 추첨될 수 있으며, 실제 진행한 날짜의 추첨 순서는 최종 결과에서 공개됩니다.</p>
+        </div>
+        <div class="callout">
+          <h3>3. 확률 판정 범위</h3>
+          <p>돌팔이 모드는 공통 확률 함수도 사용하므로, 돌팔이 의사의 치료와 처형 외에 커플 관련 효과 및 일부 특수 승리 판정에도 50% 판정이 적용됩니다. 구체적인 적용 범위를 분리할지는 별도 규칙 결정이 필요합니다.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <footer>이 문서는 현재 게임 코드의 실행 규칙을 정리한 기준 문서입니다. 규칙을 변경하면 구현과 함께 이 SoT도 갱신합니다.</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>마피아 게임</title>
+<style>
+:root{--bg:#f3f0ea;--card:#fff;--tx:#1d1b22;--mu:#6b6775;--ac:#b3202e;--bd:#ddd8cf;--ok:#1f7a4d;--ch:#ece7dd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14121a;--card:#1f1c28;--tx:#ece9f2;--mu:#9a95a8;--ac:#e0414f;--bd:#34303f;--ok:#4cc38a;--ch:#2a2634;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14121a;--card:#1f1c28;--tx:#ece9f2;--mu:#9a95a8;--ac:#e0414f;--bd:#34303f;--ok:#4cc38a;--ch:#2a2634;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;line-height:1.5}
+#app{max-width:480px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:34px;letter-spacing:.12em;text-align:center;margin:24px 0 4px;color:var(--ac)}
+h2{margin:6px 0 10px}
+.sub{text-align:center;color:var(--mu);margin:0 0 22px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:12px}
+.c{text-align:center;padding:36px 16px}
+.huge{font-size:56px;font-weight:800;margin:8px 0}
+.sm{color:var(--mu);font-size:13px}
+.btn{display:block;width:100%;padding:14px;border:0;border-radius:12px;background:var(--ac);color:#fff;font-size:17px;font-weight:700;cursor:pointer;margin-top:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.g{background:var(--ch);color:var(--tx)}
+.mode{display:block;width:100%;text-align:left;border:2px solid var(--ac);background:var(--card);color:var(--tx);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;font-size:16px}
+.mode.off{border-color:var(--bd);opacity:.5;cursor:default}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd)}
+.row:last-of-type{border:0}
+.st{display:flex;align-items:center;gap:12px}
+.st button{width:36px;height:36px;border-radius:50%;border:1px solid var(--bd);background:var(--ch);color:var(--tx);font-size:20px;cursor:pointer}
+.st b{min-width:24px;text-align:center;font-size:18px}
+.seg{display:flex;gap:6px}
+.seg button{padding:8px 14px;border-radius:10px;border:1px solid var(--bd);background:var(--ch);color:var(--tx);cursor:pointer}
+.seg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.err{color:var(--ac);font-size:14px;margin-top:8px}
+.me{font-size:24px;font-weight:800}
+.role{padding:2px 10px;border-radius:8px;background:var(--ch)}
+.role.mafia{color:var(--ac)}.role.doctor,.role.police,.role.couple{color:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.chip{width:34px;height:34px;border-radius:50%;background:var(--ch);display:flex;align-items:center;justify-content:center;font-weight:700}
+.chip.dead{opacity:.35;text-decoration:line-through}
+.mates{margin-top:8px;color:var(--ac);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 4px}
+.t{padding:14px 6px;border-radius:10px;border:2px solid var(--bd);background:var(--ch);color:var(--tx);font-size:16px;font-weight:700;cursor:pointer}
+.t.on{border-color:var(--ac);background:var(--ac);color:#fff}
+.list div{padding:6px 0;border-bottom:1px solid var(--bd)}
+.list div:last-child{border:0}
+.win{font-size:28px;font-weight:800;color:var(--ac)}
+.quit{display:block;margin:28px auto 0;background:none;border:0;color:var(--mu);text-decoration:underline;font-size:14px;cursor:pointer}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.ov .card{max-width:360px;width:100%;margin:0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const app=document.getElementById('app');
+const RN={mafia:'마피아',doctor:'의사',police:'경찰',citizen:'시민'};
+const DESC={mafia:'밤마다 한 명을 제거합니다. 동료 마피아를 알고 있습니다.',doctor:'밤마다 한 명을 지켜 줍니다. 같은 사람을 연속으로 살릴 수 없습니다.',police:'밤마다 한 명이 마피아인지 조사합니다.',citizen:'특별한 능력은 없습니다. 토론과 투표로 마피아를 찾아내세요.'};
+const LK={doctor:'ld',police:'lp'};
+Object.assign(RN,{reporter:'기자',mayor:'이장',sniper:'저격수',medium:'영매',goblin:'광대',thug:'건달',terrorist:'테러리스트',couple:'커플',detective:'탐정',madDoctor:'미치광이 의사',gatekeeper:'문지기'});
+Object.assign(RN,{strongLover:'힘 센 연인',fakeLover:'가짜 연인',juliet:'줄리엣',romeo:'로미오',ordinaryLover:'평범한 연인',miracleLover:'기적의 연인'});
+Object.assign(DESC,{strongLover:'연인이 공격받으면 자동으로 지켜 줍니다. 자신은 지킬 수 없습니다.',fakeLover:'자신이 공격받으면 연인이 대신 죽습니다.',juliet:'죽은 척해 공격을 피할 수 있습니다. 제한은 없지만, 능력을 쓴 날 밤 연인이 죽으면 자결합니다.',romeo:'오늘의 연인에게 수면제를 사용해 공격을 막습니다. 2회 사용할 수 있으며, 잠든 연인이 그날 선택한 능력 효과는 적용되지 않습니다.',ordinaryLover:'연인이 죽으면 자신도 대신 죽습니다.',miracleLover:'같은 사람과 이틀 연속 연인이 되면 연인에게 공격을 한 번 막는 두꺼운 책을 줍니다.'});
+Object.assign(RN,{thiefDoctor:'도둑 의사',plagueDoctor:'역병 의사',ordinaryDoctor:'평범한 의사',quackDoctor:'돌팔이 의사',transfusionDoctor:'수혈 의사',chartDoctor:'차트 교환 의사',sacrificeDoctor:'희생 의사'});
+Object.assign(DESC,{thiefDoctor:'두 사람을 지목합니다. 첫 번째 사람의 의료품을 훔쳐 두 번째 사람을 치료하며, 의료품을 도둑맞은 사람은 오늘 능력을 쓰지 못합니다.',plagueDoctor:'위치가 매일 바뀌는 치료약 또는 독극물 하나를 골라 사람에게 사용합니다.',ordinaryDoctor:'지목한 사람을 치료합니다.',quackDoctor:'매일 50% 확률로 치료 효과가 발동합니다. 성공 여부는 본인 차례에만 확인할 수 있습니다.',transfusionDoctor:'본인의 피를 뽑아 지목한 사람을 치료합니다. 사용하면 다음 날은 쉬고, 그다음 날 다시 사용할 수 있습니다.',chartDoctor:'두 사람을 지목해 오늘 밤 두 사람이 받은 효과를 서로 바꿉니다.',sacrificeDoctor:'사용 여부를 선택합니다. 지목한 사람을 아침까지 보호합니다. 공격 대상이 다른 의사의 치료를 받지 못하면 희생 의사가 대신 죽고, 치료받으면 평범한 의사로 전직합니다.'});
+Object.assign(DESC,{reporter:'밤에 한 명의 직업을 모두에게 공개합니다. 1회, 밤에 사망하면 발동하지 않습니다.',mayor:'투표 결과가 공개된 뒤 권한을 사용해 투표를 무효로 하고 재투표를 진행합니다. 사용하면 정체가 공개됩니다.',sniper:'밤에 한 명을 저격합니다. 1회, 마피아면 사망하고 아니면 본인이 사망합니다.',medium:'밤마다 사망자 한 명의 직업을 알아냅니다.',goblin:'투표로 처형되면 혼자 승리합니다. 밤 능력은 없습니다.',thug:'밤에 한 명을 지목해 다음 날 발언과 투표를 제한합니다.',terrorist:'투표로 처형되면 살아 있는 사람 한 명을 지목해 함께 죽습니다.',couple:'한 명이 죽으면 다른 한 명도 함께 죽습니다. 서로의 정체를 알며, 둘 다 생존한 채 게임이 끝나면 승리합니다.',detective:'밤에 한 명이 그날 밤 능력을 사용했는지 조사합니다. 다음 아침에 결과를 모두에게 공개합니다.',madDoctor:'밤에 한 명을 지목합니다. 마피아의 공격 대상이면 살리고, 아니면 죽입니다.',gatekeeper:'밤에 한 명을 지목합니다. 그 대상에게 가는 효과는 모두 문지기가 대신 받습니다.'});
+const EXT=[['reporter','rp'],['mayor','mj'],['sniper','sn'],['medium','md'],['goblin','gb'],['thug','th'],['terrorist','tr'],['detective','dt'],['madDoctor','mdo'],['gatekeeper','gk']];
+const EXTRA_LIMITS=[['reporter','rp','lrp'],['mayor','mj','lmj'],['sniper','sn','lsn'],['medium','md','lmd'],['goblin','gb','lgb'],['thug','th','lth'],['terrorist','tr','ltr'],['detective','dt','ldt'],['madDoctor','mdo','lmdo'],['gatekeeper','gk','lgk']];
+const lim=i=>{
+  const role=G.roles[i];
+  const extra=EXTRA_LIMITS.find(([key])=>key===role);
+  return extra?C[extra[2]]:C[LK[role]]||0;
+};
+const left=i=>lim(i)?lim(i)-G.uses[i]:Infinity;
+const P=i=>(i+1)+'번';
+let C={n:6,m:1,d:1,p:1,vote:'public',ld:0,lp:0,mode:'vanilla',rp:1,mj:1,sn:0,md:0,gb:0,th:0,tr:0,dt:0,mdo:0,gk:0,lrp:1,lmj:1,lsn:1,lmd:1,lgb:1,lth:1,ltr:1,ldt:1,lmdo:1,lgk:1,cp:0,loverDays:10,loverGoal:2,doctorDays:10,doctorGoal:2,self:false,reveal:false};
+let G={};
+const h=x=>{app.innerHTML=x+(G.roles&&!G.over?'<button class="quit" onclick="quitAsk()">그만두기</button>':'');scrollTo(0,0)};
+function quitAsk(){const d=document.createElement('div');d.className='ov';d.id='ov';d.innerHTML='<div class="card c"><h2>정말 그만둘까요?</h2><p>진행 중인 게임이 모두 사라지고 처음 화면으로 돌아갑니다.</p><button class="btn" onclick="quitYes()">네, 그만둡니다</button><button class="btn g" onclick="document.getElementById(\'ov\').remove()">계속하기</button></div>';document.body.appendChild(d)}
+function quitYes(){const o=document.getElementById('ov');if(o)o.remove();G={};modeScreen()}
+
+function modeScreen(){
+  h(`<h1>MAFIA</h1><p class="sub">기기 하나로 돌려 하는 마피아</p>
+  <button class="mode" onclick="C.mode='vanilla';setup()"><b>🎭 기본 (바닐라)</b><br><span class="sm">마피아 · 의사 · 경찰 · 시민</span></button>
+  <button class="mode" onclick="C.mode='ext';setup()"><b>✨ 확장 모드</b><br><span class="sm">+ 기자 · 이장 · 저격수 · 영매 · 광대 · 건달 · 테러리스트 · 탐정 · 미치광이 의사 · 문지기 · 커플</span></button>
+  <button class="mode" onclick="C.mode='quack';setup()"><b>🩹 돌팔이 모드</b><br><span class="sm">확장 직업으로 진행하며 모든 능력과 투표 처형이 50% 확률로 성공합니다.</span></button>
+  <button class="mode" onclick="C.mode='lover';loverSetup()"><b>💞 연인 마피아</b><br><span class="sm">매일 바뀌는 연인과 함께 정해진 날까지 살아남으세요.</span></button>
+  <button class="mode" onclick="C.mode='doctorMafia';doctorSetup()"><b>🩺 의사 마피아</b><br><span class="sm">마피아 없는 병원에서 의사들의 능력으로 정해진 날까지 생존자를 지키세요.</span></button>`);
+}
+
+function setC(k,v){C[k]=v;setup()}
+const tot=()=>C.m+C.d+C.p+(C.mode!='vanilla'?C.rp+C.mj+C.sn+C.md+C.gb+C.th+C.tr+C.dt+C.mdo+C.gk+C.cp*2:0);
+const skillSucceeds=()=>C.mode!='quack'||Math.random()<0.5;
+function row(l,k,min,max,d,z){
+  return `<div class="row"><span>${l}${d?`<br><span class="sm">${d}</span>`:''}</span><div class="st"><button onclick="chg('${k}',-1,${min},${max})">−</button><b>${C[k]==0&&z?'무제한':C[k]}</b><button onclick="chg('${k}',1,${min},${max})">+</button></div></div>`;
+}
+function chg(k,d,min,max){C[k]=Math.min(max,Math.max(min,C[k]+d));setup()}
+function setVote(v){C.vote=v;setup()}
+function setup(){
+  if(C.mode=='lover')return loverSetup();
+  if(C.mode=='doctorMafia')return doctorSetup();
+  let e='';
+  if(C.n<=C.m+C.d+C.p)e='참여 인원은 마피아·의사·경찰 수의 합보다 많아야 합니다.';
+  h(`<h2>게임 설정 · ${C.mode=='vanilla'?'기본 모드':C.mode=='quack'?'돌팔이 모드':'확장 모드'}</h2><div class="card">
+  ${row('참여 인원','n',4,20)}${row('마피아','m',1,9,DESC.mafia)}${row('의사','d',0,5,DESC.doctor)}${row('경찰','p',0,5,DESC.police)}${C.mode!='vanilla'?row('기자','rp',0,3,DESC.reporter)+row('이장','mj',0,2,DESC.mayor)+row('저격수','sn',0,2,DESC.sniper)+row('영매','md',0,2,DESC.medium)+row('광대','gb',0,2,DESC.goblin)+row('건달','th',0,3,DESC.thug)+row('테러리스트','tr',0,3,DESC.terrorist)+row('탐정','dt',0,3,DESC.detective)+row('미치광이 의사','mdo',0,3,DESC.madDoctor)+row('문지기','gk',0,3,DESC.gatekeeper)+row('커플 쌍','cp',0,2,DESC.couple):''}
+  <div class="sm" style="margin-top:12px">능력 사용 횟수 제한</div>
+  ${row('의사 횟수','ld',0,20,'',1)}${row('경찰 횟수','lp',0,20,'',1)}
+  ${C.mode!='vanilla'?EXTRA_LIMITS.filter(([role,count])=>C[count]>0).map(([role,count,limit])=>row(`${RN[role]} 횟수`,limit,0,20,'',1)).join(''):''}
+  <div class="row"><span>투표 방식</span><div class="seg">
+  <button class="${C.vote=='public'?'on':''}" onclick="setVote('public')">공개투표</button>
+  <button class="${C.vote=='secret'?'on':''}" onclick="setVote('secret')">비밀투표</button></div></div>
+  <div class="row"><span>본인 투표</span><div class="seg"><button class="${C.self?'on':''}" onclick="setC('self',true)">허용</button><button class="${!C.self?'on':''}" onclick="setC('self',false)">불허</button></div></div>
+  <div class="row"><span>사망자 직업</span><div class="seg"><button class="${C.reveal?'on':''}" onclick="setC('reveal',true)">공개</button><button class="${!C.reveal?'on':''}" onclick="setC('reveal',false)">비공개</button></div></div>
+  <p class="sm">마피아·의사·경찰을 우선 배정하고, 남은 자리에 추가 직업을 무작위로 배정합니다. 배정되지 않은 인원은 시민입니다.${C.mode=='quack'?'<br>밤 능력은 먼저 50% 성공 여부를 보여줍니다. 실패하면 효과가 없고 횟수도 소모하지 않습니다. 투표 처형도 50% 확률로 발생합니다.':''}<br>공개투표는 누가 누구를 찍었는지 공개, 비밀투표는 득표수만 공개</p>
+  ${e?`<div class="err">${e}</div>`:''}</div>
+  <button class="btn" ${e?'disabled':''} onclick="startGame()">게임 시작</button>
+  <button class="btn g" onclick="modeScreen()">← 모드 선택</button>`);
+}
+
+function loverSetup(){
+  C.loverGoal=Math.min(C.loverGoal,C.n);
+  h(`<h2>연인 마피아 설정</h2><div class="card">
+  ${row('인원수','n',2,20)}
+  ${row('일 수','loverDays',1,30)}
+  ${row('생존 목표 인원','loverGoal',1,C.n)}
+  <p class="sm">여섯 직업을 무작위로 배정합니다. 인원이 여섯 명을 넘으면 직업이 중복될 수 있습니다.<br>매일 아침 연인 관계가 공개되고, 공격 대상은 비공개로 미리 무작위 지정됩니다. 이미 죽은 사람도 다시 뽑힐 수 있으며, 추첨 순서는 최종 결과에서 공개됩니다.</p>
+  </div>
+  <button class="btn" onclick="startGame()">게임 시작</button>
+  <button class="btn g" onclick="modeScreen()">← 모드 선택</button>`);
+}
+
+function startGame(){
+  if(C.mode=='lover')return loverStart();
+  if(C.mode=='doctorMafia')return doctorStart();
+  let r=[];
+  for(let i=0;i<C.m;i++)r.push('mafia');
+  for(let i=0;i<C.d;i++)r.push('doctor');
+  for(let i=0;i<C.p;i++)r.push('police');
+  if(C.mode!='vanilla'){
+    const extras=[];
+    EXT.forEach(([k,key])=>{for(let i=0;i<C[key];i++)extras.push([k])});
+    for(let i=0;i<C.cp;i++)extras.push(['couple','couple']);
+    for(let i=extras.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[extras[i],extras[j]]=[extras[j],extras[i]]}
+    let remaining=C.n-r.length;
+    for(const group of extras){
+      if(group.length<=remaining){r.push(...group);remaining-=group.length}
+    }
+  }
+  while(r.length<C.n)r.push('citizen');
+  for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]]}
+  const couples=r.map((role,i)=>role=='couple'?i:-1).filter(i=>i>=0);
+  const pair=r.map(()=>null);
+  for(let i=0;i<couples.length;i+=2){pair[couples[i]]=couples[i+1];pair[couples[i+1]]=couples[i]}
+  const nightOrder=r.map((_,i)=>i).sort((a,b)=>(r[a]=='gatekeeper'?0:1)-(r[b]=='gatekeeper'?0:1));
+  G={roles:r,alive:r.map(()=>true),pair,nightOrder,guards:[],day:1,kills:[],saves:[],mutes:[],madDoctorActions:[],abilityUsed:r.map(()=>false),nightAbilityUsed:r.map(()=>false),skillResults:r.map(()=>null),cur:0,sel:null,votes:[],reveals:[],investigations:[],snipes:[],mu:{},rv:null,uses:r.map(()=>0),last:r.map(()=>null)};
+  nightNext();
+}
+
+function loverStart(){
+  const pool=['strongLover','fakeLover','juliet','romeo','ordinaryLover','miracleLover'];
+  const roles=[];
+  const shuffled=pool.slice();
+  for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]}
+  roles.push(...shuffled.slice(0,Math.min(C.n,pool.length)));
+  while(roles.length<C.n)roles.push(pool[Math.floor(Math.random()*pool.length)]);
+  for(let i=roles.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[roles[i],roles[j]]=[roles[j],roles[i]]}
+  const attacks=Array.from({length:C.loverDays},()=>Math.floor(Math.random()*C.n));
+  G={lover:true,roles,alive:roles.map(()=>true),partners:roles.map(()=>-1),previousPartners:roles.map(()=>-1),books:roles.map(()=>0),romeoUses:roles.map(()=>2),actions:{},sleeping:roles.map(()=>false),attacks,day:1,goal:C.loverGoal,days:C.loverDays,cur:0,turnOrder:[],deaths:[],over:false};
+  loverStartDay();
+}
+
+function loverStartDay(){
+  const alive=aliveList();
+  const shuffled=alive.slice();
+  for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]}
+  G.partners.fill(-1);
+  for(let i=0;i+1<shuffled.length;i+=2){G.partners[shuffled[i]]=shuffled[i+1];G.partners[shuffled[i+1]]=shuffled[i]}
+  G.roles.forEach((role,i)=>{
+    const partner=G.partners[i];
+    if(role=='miracleLover'&&partner>=0&&G.previousPartners[i]===partner)G.books[partner]++;
+  });
+  G.previousPartners=G.partners.slice();
+  G.actions={};
+  G.sleeping=G.roles.map(()=>false);
+  G.cur=0;
+  G.turnOrder=alive.slice();
+  const couples=G.roles.map((_,i)=>i).filter(i=>G.partners[i]>i);
+  const soloPlayers=G.roles.map((_,i)=>i).filter(i=>G.alive[i]&&G.partners[i]<0);
+  const coupleList=[
+    ...couples.map(i=>`<div>${P(i)} · ${P(G.partners[i])}</div>`),
+    ...soloPlayers.map(i=>`<div>${P(i)} · 솔로</div>`)
+  ].join('')||'<div>오늘은 모두 솔로입니다.</div>';
+  h(`<div class="card c"><div class="huge">💞</div><h2>${G.day}일차</h2>
+  <div class="card list"><b>오늘의 연인</b>${coupleList}</div>
+  <p class="sm">오늘 밤 공격 대상은 공개되지 않습니다. 기기를 각 플레이어에게 차례로 넘겨주세요.</p>
+  <button class="btn" onclick="loverNextTurn()">첫 번째 플레이어</button></div>`);
+}
+
+function loverNextTurn(){
+  while(G.cur<G.turnOrder.length){
+    const i=G.turnOrder[G.cur];
+    if(!G.alive[i]){G.cur++;continue}
+    if(G.sleeping[i]){
+      pass(i,()=>{G.cur++;loverNextTurn()},`💤 ${G.day}일차 · 잠듦`);
+      return;
+    }
+    G.sel=null;
+    pass(i,()=>loverRoleTurn(i),`💞 ${G.day}일차`);
+    return;
+  }
+  loverResolveNight();
+}
+
+function loverRoleTurn(i){
+  const role=G.roles[i],partner=G.partners[i],solo=partner<0;
+  const aloneBlocked=solo&&G.day%2===1;
+  const partnerText=solo?'오늘은 솔로입니다.':`오늘의 연인: <b>${P(partner)}</b>${G.books[i]?` · 두꺼운 책 ${G.books[i]}권`:''}`;
+  const roleInfo=`<div class="me">${P(i)} · <span class="role">${RN[role]}</span></div><p>${DESC[role]}</p><p>${partnerText}</p>`;
+  if(aloneBlocked){h(`<div class="card">${roleInfo}<p>홀수 날의 솔로는 능력을 사용할 수 없습니다.</p><button class="btn" onclick="G.cur++;loverNextTurn()">확인</button></div>`);return}
+  if(role=='romeo'&&partner>=0&&G.romeoUses[i]>0){
+    h(`<div class="card">${roleInfo}<p>수면제 남은 횟수: ${G.romeoUses[i]}</p><p>수면제를 사용할 대상을 선택하세요.</p>
+    <div class="grid"><button class="t ${G.sel===partner?'on':''}" onclick="G.sel=${partner};loverRoleTurn(${i})">${P(partner)}</button></div>
+    <button class="btn" ${G.sel!==partner?'disabled':''} onclick="loverUseRomeo(${i})">선택한 연인에게 수면제 사용</button>
+    <button class="btn g" onclick="loverSkipAction(${i})">사용하지 않음</button></div>`);
+    return;
+  }
+  if(role=='juliet'){
+    h(`<div class="card">${roleInfo}<p>오늘 밤 죽은 척해 공격을 피할까요?</p>
+    <button class="btn" onclick="loverUseJuliet(${i})">죽은 척하기</button>
+    <button class="btn g" onclick="loverSkipAction(${i})">사용하지 않음</button></div>`);
+    return;
+  }
+  h(`<div class="card">${roleInfo}${role=='romeo'?'<p>수면제를 모두 사용했습니다.</p>':'<p>자동 능력 또는 특별한 선택이 없습니다.</p>'}<button class="btn" onclick="loverSkipAction(${i})">확인</button></div>`);
+}
+function loverUseRomeo(i){
+  const target=G.sel;
+  if(target!==G.partners[i])return loverRoleTurn(i);
+  G.romeoUses[i]--;
+  G.actions[i]={sleep:target};
+  G.cur++;loverNextTurn();
+}
+function loverUseJuliet(i){G.actions[i]={feign:true};G.cur++;loverNextTurn()}
+function loverSkipAction(i){G.actions[i]={};G.cur++;loverNextTurn()}
+
+function loverKill(i,deaths){
+  if(i<0||!G.alive[i])return;
+  G.alive[i]=false;
+  deaths.push(i);
+  if(G.roles[i]=='ordinaryLover'){
+    const partner=G.partners[i];
+    if(partner>=0&&G.alive[partner])loverKill(partner,deaths);
+  }
+}
+
+function loverResolveNight(){
+  G.sleeping.fill(false);
+  const activeActions={};
+  G.turnOrder.forEach(i=>{
+    const action=G.actions[i]||{};
+    if(G.sleeping[i]){
+      if(action.sleep!==undefined)G.romeoUses[i]++;
+      return;
+    }
+    activeActions[i]=action;
+    if(action.sleep!==undefined)G.sleeping[action.sleep]=true;
+  });
+  const target=G.attacks[G.day-1];
+  const deaths=[];
+  let protectedBy=null;
+  if(G.alive[target]){
+    const partner=G.partners[target];
+    if(partner>=0&&G.alive[partner]&&!G.sleeping[partner]&&G.roles[partner]=='strongLover')protectedBy=partner;
+    if(G.sleeping[target])protectedBy=G.partners[target];
+    if(protectedBy===null&&G.books[target]>0){G.books[target]--;protectedBy=-2}
+    if(!G.sleeping[target]&&G.roles[target]=='juliet'&&activeActions[target]?.feign)protectedBy=target;
+    if(protectedBy===null){
+      if(G.roles[target]=='fakeLover'&&partner>=0)loverKill(partner,deaths);
+      else loverKill(target,deaths);
+    }
+  }
+  G.roles.forEach((role,i)=>{
+    if(role=='juliet'&&G.alive[i]&&!G.sleeping[i]&&activeActions[i]?.feign){
+      const partner=G.partners[i];
+      if(partner>=0&&!G.alive[partner])loverKill(i,deaths);
+    }
+  });
+  G.deaths=deaths;
+  const alive=aliveList().length;
+  if(alive<G.goal){loverEnd(false);return}
+  if(G.day>=G.days){loverEnd(true);return}
+  h(`<div class="card c"><div class="huge">☀️</div><h2>${G.day}일차 아침</h2>
+  <p>${deaths.length?`사망: ${deaths.map(P).join(', ')}`:`오늘 밤 사망자는 없습니다.`}</p>
+  ${protectedBy!==null?`<p>${protectedBy===-2?'두꺼운 책이 공격을 막았습니다.':`${P(protectedBy)}의 능력이 공격을 막았습니다.`}</p>`:''}
+  <p>생존 ${alive}명 · 목표 ${G.goal}명</p><button class="btn" onclick="loverAdvanceDay()">다음 날</button></div>`);
+}
+function loverAdvanceDay(){G.day++;loverStartDay()}
+function loverEnd(won){
+  G.over=true;
+  h(`<div class="card c"><div class="huge">${won?'🎉':'💔'}</div><div class="win">${won?'연인 마피아 승리!':'연인 마피아 실패'}</div>
+  <p>${G.day}일 동안 생존 · 생존자 ${aliveList().length}명 / 목표 ${G.goal}명</p></div>
+  <div class="card list"><b>숨겨진 공격 추첨 순서</b>${G.attacks.slice(0,G.day).map((target,day)=>`<div>${day+1}일차 · ${P(target)} 플레이어</div>`).join('')}</div>
+  <div class="card list"><b>전체 직업</b>${G.roles.map((r,j)=>`<div>${P(j)} · ${RN[r]} ${G.alive[j]?'':'<span class="sm">(사망)</span>'}</div>`).join('')}</div>
+  <button class="btn" onclick="loverSetup()">같은 설정으로 다시 하기</button>
+  <button class="btn g" onclick="modeScreen()">처음으로</button>`);
+}
+
+function doctorSetup(){
+  C.doctorGoal=Math.min(C.doctorGoal,C.n);
+  h(`<h2>의사 마피아 설정</h2><div class="card">
+  ${row('인원수','n',2,20)}
+  ${row('일 수','doctorDays',1,30)}
+  ${row('생존 목표 인원','doctorGoal',1,C.n)}
+  <p class="sm">의사 역할은 새 게임마다 플레이어 번호에 무작위로 배정됩니다. 인원이 여덟 명을 넘으면 역할이 중복될 수 있습니다.<br>의사 차례는 매일 생존자 1번부터 번호순으로 진행합니다. 모든 선택을 마친 뒤 효과를 한 번에 처리합니다. 공격 대상은 미리 무작위 지정되며 공개되지 않고, 이미 죽은 사람도 다시 뽑힐 수 있습니다. 추첨 순서는 최종 결과에서 공개됩니다. 모든 직업은 매일 능력을 선택해야 합니다. 희생 의사만 선택적으로 사용할 수 있습니다.</p>
+  </div>
+  <button class="btn" onclick="startGame()">게임 시작</button>
+  <button class="btn g" onclick="modeScreen()">← 모드 선택</button>`);
+}
+
+function doctorStart(){
+  const pool=['thiefDoctor','madDoctor','plagueDoctor','ordinaryDoctor','quackDoctor','transfusionDoctor','chartDoctor','sacrificeDoctor'];
+  const roles=[];
+  const shuffled=pool.slice();
+  for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]}
+  roles.push(...shuffled.slice(0,Math.min(C.n,pool.length)));
+  while(roles.length<C.n)roles.push(pool[Math.floor(Math.random()*pool.length)]);
+  for(let i=roles.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[roles[i],roles[j]]=[roles[j],roles[i]]}
+  G={doctorMafia:true,roles,alive:roles.map(()=>true),attacks:Array.from({length:C.doctorDays},()=>Math.floor(Math.random()*C.n)),day:1,days:C.doctorDays,goal:C.doctorGoal,cur:0,turnOrder:[],blocked:[],sleeping:[],effects:[],actions:{},cooldownUntil:roles.map(()=>0),converted:roles.map(()=>false),over:false};
+  doctorStartDay();
+}
+
+function doctorStartDay(){
+  const alive=aliveList();
+  G.turnOrder=alive.slice();
+  G.cur=0;G.blocked=[];G.sleeping=[];G.effects=[];G.actions={};
+  G.attackTarget=G.attacks[G.day-1];
+  const poisonFirst=Math.random()<0.5;
+  G.pills={plagueDoctor:poisonFirst?['poison','heal']:['heal','poison']};
+  h(`<div class="card c"><div class="huge">🩺</div><h2>${G.day}일차</h2>
+  <p>오늘 밤 공격 대상은 공개되지 않습니다.</p>
+  <p class="sm">기기를 각 의사에게 차례로 넘겨 능력을 사용하세요.</p>
+  <button class="btn" onclick="doctorNextTurn()">첫 번째 의사</button></div>`);
+}
+
+function doctorNextTurn(){
+  while(G.cur<G.turnOrder.length){
+    const i=G.turnOrder[G.cur];
+    if(!G.alive[i]){G.cur++;continue}
+    if(G.day<G.cooldownUntil[i]){
+      pass(i,()=>{G.cur++;doctorNextTurn()},`🩸 ${G.day}일차 · 수혈 후 휴식`);
+      return;
+    }
+    pass(i,()=>doctorRoleTurn(i),`🩺 ${G.day}일차`);
+    return;
+  }
+  doctorResolveNight();
+}
+
+function doctorRoleTurn(i){
+  const role=G.roles[i];
+  G.doctorActor=i;
+  G.doctorStage=null;
+  if(role=='quackDoctor'){
+    G.quackSuccess=Math.random()<0.5;
+    h(`<div class="card c"><div class="me">${P(i)} · ${RN[role]}</div><p>돌팔이 판정</p><div class="win">${G.quackSuccess?'성공':'실패'}</div><p>계속해서 오늘 능력을 사용하세요.</p><button class="btn" onclick="doctorTargetScreen(${i},'치료할 사람을 선택하세요',aliveList())">능력 선택</button></div>`);
+    return;
+  }
+  if(role=='thiefDoctor'){
+    G.doctorStage='steal';
+    doctorTargetScreen(i,'의료품을 훔칠 사람을 선택하세요',aliveList().filter(j=>j!=i));
+  }else if(role=='plagueDoctor'){
+    const pills=G.pills.plagueDoctor;
+    const options=Math.random()<0.5?[0,1]:[1,0];
+    G.doctorPillOptions=options.map(index=>pills[index]);
+    h(`<div class="card"><div class="me">${P(i)} · ${RN[role]}</div><p>${DESC[role]}</p>
+    <button class="btn" onclick="doctorChoosePill(${i},0)">약 1 선택</button>
+    <button class="btn g" onclick="doctorChoosePill(${i},1)">약 2 선택</button></div>`);
+  }else if(role=='transfusionDoctor'){
+    doctorTargetScreen(i,'수혈할 사람을 선택하세요',aliveList());
+  }else if(role=='chartDoctor'){
+    G.doctorStage='chartFirst';
+    doctorTargetScreen(i,'효과를 교환할 첫 번째 사람을 선택하세요',aliveList());
+  }else if(role=='sacrificeDoctor'){
+    h(`<div class="card"><div class="me">${P(i)} · ${RN[role]}</div><p>${DESC[role]}</p>
+    <button class="btn" onclick="doctorUseSacrifice(${i})">희생 능력 사용</button>
+    <button class="btn g" onclick="doctorSkipSacrifice(${i})">이번 밤 사용하지 않음</button></div>`);
+  }else{
+    doctorTargetScreen(i,'치료할 사람을 선택하세요',aliveList());
+  }
+}
+
+function doctorTargetScreen(i,message,list){
+  G.sel=null;
+  if(!list.length){
+    h(`<div class="card c"><div class="me">${P(i)} · ${RN[G.roles[i]]}</div><p>${message}</p><p class="sm">능력을 사용할 수 있는 대상이 없습니다.</p><button class="btn" onclick="doctorNoTarget(${i})">다음 차례</button></div>`);
+    return;
+  }
+  const buttons=list.map(j=>`<button class="t" data-target="${j}">${P(j)}</button>`).join('');
+  h(`<div class="card"><div class="me">${P(i)} · ${RN[G.roles[i]]}</div><p>${DESC[G.roles[i]]}</p><p>${message}</p><div class="grid">${buttons}</div>
+  <button class="btn" disabled>대상을 선택하세요</button></div>`);
+  app.querySelectorAll('.t').forEach(button=>{
+    button.onclick=()=>doctorSelectTarget(i,Number(button.dataset.target));
+  });
+}
+function doctorNoTarget(i){G.actions[i]={noTarget:true};G.doctorStage=null;G.cur++;doctorNextTurn()}
+
+function doctorSelectTarget(i,target){
+  if(G.doctorStage=='steal'){
+    G.stealTarget=target;
+    G.doctorStage='thiefHeal';
+    doctorTargetScreen(i,'훔친 의료품으로 치료할 사람을 선택하세요',aliveList());
+  }else if(G.doctorStage=='chartFirst'){
+    G.chartFirst=target;
+    G.doctorStage='chartSecond';
+    doctorTargetScreen(i,'효과를 교환할 두 번째 사람을 선택하세요',aliveList().filter(j=>j!=target));
+  }else if(G.doctorStage=='thiefHeal'){
+    G.effects.push({type:'heal',target,by:i});
+    G.actions[i]={steal:G.stealTarget,target};
+    G.cur++;doctorNextTurn();
+  }else if(G.doctorStage=='chartSecond'){
+    G.actions[i]={swap:[G.chartFirst,target]};
+    G.effects.push({type:'swap',targets:[G.chartFirst,target],by:i});
+    G.cur++;doctorNextTurn();
+  }else if(G.doctorStage=='sacrifice'){
+    G.actions[i]={sacrifice:target};
+    G.effects.push({type:'sacrifice',target,by:i});
+    G.cur++;doctorNextTurn();
+  }else{
+    const type=G.roles[i]=='quackDoctor'?(G.quackSuccess?'heal':null):'heal';
+    if(G.roles[i]=='madDoctor')G.actions[i]={madTarget:target};
+    else if(G.roles[i]=='plagueDoctor')G.effects.push({type:G.selectedPill,target,by:i});
+    else if(G.roles[i]=='quackDoctor'){
+      if(type)G.effects.push({type,target,by:i});
+      G.actions[i]={success:!!type,target};
+    }else if(G.roles[i]=='transfusionDoctor'){
+      G.effects.push({type:'heal',target,by:i});
+      G.actions[i]={transfusion:target};
+    }else G.effects.push({type:'heal',target,by:i});
+    G.cur++;doctorNextTurn();
+  }
+}
+
+function doctorChoosePill(i,index){
+  G.selectedPill=G.doctorPillOptions[index];
+  doctorTargetScreen(i,`선택한 약을 ${G.selectedPill=='heal'?'치료':'독극물'}할 사람을 선택하세요`,aliveList());
+}
+function doctorUseSacrifice(i){
+  G.doctorStage='sacrifice';
+  doctorTargetScreen(i,'아침까지 보호할 사람을 선택하세요',aliveList());
+}
+function doctorSkipSacrifice(i){G.actions[i]={skip:true};G.cur++;doctorNextTurn()}
+
+function doctorResolveNight(){
+  const stolenTargets=Object.values(G.actions||{}).filter(action=>action.steal!==undefined).map(action=>action.steal);
+  G.blocked=[];
+  stolenTargets.forEach(target=>G.blocked[target]=true);
+  const availableEffects=G.effects.filter(e=>!G.blocked[e.by]);
+  const actions=Object.entries(G.actions||{}).filter(([player])=>!G.blocked[Number(player)]);
+  const events=[{type:'attack',target:G.attackTarget,by:-1},...availableEffects.filter(e=>e.type!='swap')];
+  availableEffects.filter(e=>e.type=='swap').forEach(swap=>{
+    events.forEach(event=>{
+      if(event.target===swap.targets[0])event.target=swap.targets[1];
+      else if(event.target===swap.targets[1])event.target=swap.targets[0];
+    });
+  });
+  const attack=events.find(e=>e.type=='attack').target;
+  const heals=new Set(events.filter(e=>e.type=='heal').map(e=>e.target));
+  const shields=new Set();
+  const sacrifices=events.filter(e=>e.type=='sacrifice');
+  sacrifices.forEach(e=>shields.add(e.target));
+  const deaths=[];
+  const dead=new Set();
+  actions.forEach(([player,action])=>{
+    if(action.transfusion!==undefined)G.cooldownUntil[Number(player)]=G.day+2;
+    if(action.madTarget!==undefined){
+      const target=action.madTarget;
+      if(target===attack)heals.add(target);
+      else events.push({type:'poison',target,by:Number(player)});
+    }
+  });
+  if(sacrifices.length&&attack>=0&&G.alive[attack]){
+    if(heals.has(attack)){
+      sacrifices.forEach(e=>{
+        G.roles[e.by]='ordinaryDoctor';
+        G.converted[e.by]=true;
+      });
+    }else{
+      heals.add(attack);
+      sacrifices.forEach(e=>dead.add(e.by));
+    }
+  }
+  const poisons=events.filter(e=>e.type=='poison').map(e=>e.target);
+  poisons.forEach(target=>{if(!shields.has(target))dead.add(target)});
+  if(attack>=0&&G.alive[attack]&&!heals.has(attack)&&!shields.has(attack)){
+    dead.add(attack);
+  }
+  sacrifices.forEach(e=>{if(G.actions[e.by])G.actions[e.by].shielded=true});
+  dead.forEach(target=>{if(G.alive[target]){G.alive[target]=false;deaths.push(target)}});
+  const seen=new Set();
+  G.deaths=deaths.filter(i=>{if(seen.has(i))return false;seen.add(i);return true});
+  G.lastNightEvents=events;
+  const survivors=aliveList().length;
+  if(survivors<G.goal){doctorEnd(false);return}
+  if(G.day>=G.days){doctorEnd(true);return}
+  h(`<div class="card c"><div class="huge">🌅</div><h2>${G.day}일차 아침</h2>
+  <p>${G.deaths.length?`사망: ${G.deaths.map(P).join(', ')}`:'오늘 밤 사망자는 없습니다.'}</p>
+  ${Object.values(G.actions).some(a=>a.shielded)?'<p>희생 의사의 무적 보호가 발동했습니다.</p>':''}
+  ${G.roles.some((r,i)=>G.converted[i])?'<p>희생 의사가 평범한 의사로 전직했습니다.</p>':''}
+  <p>생존 ${survivors}명 · 목표 ${G.goal}명</p><button class="btn" onclick="doctorAdvanceDay()">다음 날</button></div>`);
+}
+
+function doctorAdvanceDay(){G.day++;doctorStartDay()}
+function doctorEnd(won){
+  G.over=true;
+  h(`<div class="card c"><div class="huge">${won?'🎉':'🩺'}</div><div class="win">${won?'의사 마피아 승리!':'의사 마피아 실패'}</div>
+  <p>${G.day}일 동안 생존 · 생존자 ${aliveList().length}명 / 목표 ${G.goal}명</p></div>
+  <div class="card list"><b>숨겨진 공격 추첨 순서</b>${G.attacks.slice(0,G.day).map((target,day)=>`<div>${day+1}일차 · ${P(target)} 플레이어</div>`).join('')}</div>
+  <div class="card list"><b>전체 직업</b>${G.roles.map((r,j)=>`<div>${P(j)} · ${RN[r]}${G.converted[j]?' (전직)':''} ${G.alive[j]?'':'<span class="sm">(사망)</span>'}</div>`).join('')}</div>
+  <button class="btn" onclick="doctorSetup()">같은 설정으로 다시 하기</button>
+  <button class="btn g" onclick="modeScreen()">처음으로</button>`);
+}
+
+function pass(i,fn,t){
+  G.fn=fn;
+  h(`<div class="card c"><div class="sm">${t}</div><div class="huge">${P(i)}</div>
+  <p>기기를 <b>${P(i)}</b> 플레이어에게 넘겨주세요.<br>다른 사람은 화면을 보면 안 됩니다.</p>
+  <button class="btn" onclick="G.fn()">다음 (${P(i)}이 누르세요)</button></div>`);
+}
+
+function info(i){
+  const r=G.roles[i];
+  let s=`<div class="me">${P(i)} · <span class="role ${r}">${RN[r]}</span></div><div class="sm">${DESC[r]}</div>${lim(i)?`<div class="sm">남은 능력 횟수: <b>${left(i)}</b>회</div>`:''}
+  <div class="chips">${G.roles.map((_,j)=>`<span class="chip ${G.alive[j]?'':'dead'}">${j+1}</span>`).join('')}</div>
+  <div class="sm">생존 ${G.alive.filter(a=>a).length}명 (줄 그어진 번호는 사망)</div>`;
+  if(r=='mafia'){
+    const m=G.roles.map((x,j)=>x=='mafia'&&j!=i?j:-1).filter(j=>j>=0);
+    s+=`<div class="mates">동료 마피아: ${m.length?m.map(j=>P(j)+(G.alive[j]?'':'(사망)')).join(', '):'없음'}</div>`;
+  }
+  if(r=='couple'){
+    const mate=G.pair[i];
+    s+=`<div class="mates">커플 상대: ${P(mate)} · ${RN[G.roles[mate]]}</div>`;
+  }
+  return `<div class="card">${s}</div>`;
+}
+function targets(list,extra){
+  return `<div class="grid">${list.map(j=>`<button class="t ${G.sel===j?'on':''}" onclick="G.sel=${j};G.re()">${P(j)}</button>`).join('')}${extra||''}</div>`;
+}
+const aliveList=()=>G.roles.map((_,j)=>j).filter(j=>G.alive[j]);
+function effectTarget(j){
+  const guard=G.guards.find(g=>g.target===j&&G.alive[g.by]);
+  return guard?guard.by:j;
+}
+
+/* 밤 */
+function nightNext(){
+  while(G.cur<G.nightOrder.length&&!G.alive[G.nightOrder[G.cur]])G.cur++;
+  if(G.cur>=G.nightOrder.length)return morning();
+  const j=G.nightOrder[G.cur];
+  G.sel=null;
+  pass(j,()=>nightAct(j),`🌙 ${G.day}번째 밤`);
+}
+function nightAct(i){
+  const r=G.roles[i];
+  if(left(i)<=0){h(info(i)+`<div class="card"><p>능력 사용 횟수를 모두 소진했습니다.</p><button class="btn" onclick="nightDone(${i})">확인</button></div>`);return}
+  const active=['mafia','doctor','police','reporter','sniper','medium','thug','detective','madDoctor','gatekeeper'].includes(r);
+  if(!active){h(info(i)+`<div class="card"><p>밤에 쓸 수 있는 능력이 없습니다.</p><button class="btn" onclick="nightDone(${i})">확인</button></div>`);return}
+  if(G.skillResults[i]===null){
+    G.skillResults[i]=skillSucceeds();
+    if(C.mode!='quack')return nightChoice(i);
+    h(info(i)+`<div class="card c"><p>돌팔이 판정</p><div class="win">${G.skillResults[i]?'성공':'실패'}</div><p class="sm">${G.skillResults[i]?'능력 선택 화면으로 이동합니다.':'능력은 발동하지 않으며 사용 횟수도 소모하지 않습니다.'}</p><button class="btn" onclick="G.sel=null;nightChoice(${i})">능력 선택</button></div>`);
+    return;
+  }
+  nightChoice(i);
+}
+function nightChoice(i){
+  const r=G.roles[i];G.re=()=>nightChoice(i);
+  let msg,list,L=aliveList();
+  if(r=='mafia'){msg='오늘 밤 제거할 대상을 선택하세요';list=L.filter(j=>G.roles[j]!='mafia')}
+  else if(r=='doctor'){msg='살릴 사람을 선택하세요 (자신도 가능'+(G.last[i]!=null?', 직전에 살린 '+P(G.last[i])+' 제외':'')+')';list=L.filter(j=>j!=G.last[i])}
+  else if(r=='police'){msg='조사할 사람을 선택하세요';list=L.filter(j=>j!=i)}
+  else if(r=='reporter'){msg='직업을 공개할 사람을 선택하세요 (1회, 밤에 사망하면 발동 안 됨)';list=L.filter(j=>j!=i)}
+  else if(r=='sniper'){msg='저격할 사람을 선택하세요 (1회, 마피아가 아니면 당신이 사망)';list=L.filter(j=>j!=i)}
+  else if(r=='medium'){const D=G.roles.map((_,j)=>j).filter(j=>!G.alive[j]);msg=D.length?'직업을 확인할 사망자를 선택하세요':'아직 확인할 사망자가 없습니다';list=D}
+  else if(r=='thug'){msg='내일 발언과 투표를 제한할 사람을 선택하세요';list=L.filter(j=>j!=i)}
+  else if(r=='detective'){msg='능력 사용 여부를 확인할 사람을 선택하세요';list=L.filter(j=>j!=i)}
+  else if(r=='madDoctor'){msg='마피아 공격을 받으면 살리고, 공격받지 않으면 죽일 사람을 선택하세요';list=L}
+  else if(r=='gatekeeper'){msg='효과를 대신 받을 사람을 선택하세요';list=L.filter(j=>j!=i)}
+  h(info(i)+`<div class="card"><p>${msg}</p>${C.mode!='quack'&&!G.skillResults[i]?'<p class="err">이번 능력은 실패했습니다. 횟수는 소모되지 않습니다.</p>':''}${targets(list,`<button class="t ${G.sel===-1?'on':''}" onclick="G.sel=-1;G.re()">사용 안 함</button>`)}
+  <button class="btn" ${G.sel==null?'disabled':''} onclick="nightConfirm(${i})">선택 확정</button></div>`);
+}
+function nightConfirm(i){
+  const r=G.roles[i];
+  if(G.sel===-1){if(r=='doctor')G.last[i]=null;return nightDone(i)}
+  if(!G.skillResults[i]){
+    return nightDone(i);
+  }
+  G.uses[i]++;
+  G.abilityUsed[i]=true;
+  G.nightAbilityUsed[i]=true;
+  const target=r=='gatekeeper'?G.sel:effectTarget(G.sel);
+  if(r=='gatekeeper')G.guards.push({by:i,target});
+  if(r=='mafia')G.kills.push(target);
+  if(r=='doctor'){G.saves.push(target);G.last[i]=target}
+  if(r=='reporter')G.reveals.push({by:i,t:target});
+  if(r=='sniper')G.snipes.push({by:i,t:target});
+  if(r=='thug'&&!G.mutes.includes(target))G.mutes.push(target);
+  if(r=='madDoctor')G.madDoctorActions.push({by:i,t:target});
+  if(r=='detective')G.investigations.push({by:i,t:target});
+  if(r=='medium'){h(info(i)+`<div class="card c"><p>조사 결과</p><div class="win">${P(target)}의 직업은<br>${RN[G.roles[target]]}</div><button class="btn" onclick="nightDone(${i})">확인</button></div>`);return}
+  if(r=='police'){
+    const isM=G.roles[target]=='mafia';
+    h(info(i)+`<div class="card c"><p>조사 결과</p><div class="win">${P(target)}은(는)<br>${isM?'마피아입니다':'마피아가 아닙니다'}</div>
+    <button class="btn" onclick="nightDone(${i})">확인</button></div>`);
+    return;
+  }
+  if(r=='detective'){
+    return nightDone(i);
+  }
+  nightDone(i);
+}
+function nightDone(i){G.cur++;nightNext()}
+
+/* 아침 */
+function winner(){
+  const m=G.roles.filter((r,j)=>G.alive[j]&&r=='mafia').length;
+  const o=G.roles.filter((r,j)=>G.alive[j]&&r!='mafia').length;
+  const factionWinner=m==0?'citizen':m>=o?'mafia':null;
+  if(factionWinner&&G.pair.some((mate,i)=>mate!==null&&i<mate&&G.alive[i]&&G.alive[mate])){
+    if(G.coupleWinResolved===undefined)G.coupleWinResolved=skillSucceeds();
+    if(G.coupleWinResolved)return 'couple';
+  }
+  if(factionWinner)return factionWinner;
+  return null;
+}
+function killPlayer(i,deaths){
+  if(!G.alive[i])return;
+  G.alive[i]=false;
+  deaths.push(i);
+  const mate=G.pair[i];
+  if(mate!==null&&G.alive[mate]&&skillSucceeds()){
+    G.abilityUsed[i]=true;
+    G.abilityUsed[mate]=true;
+    killPlayer(mate,deaths);
+  }
+}
+function morning(){
+  let t=null;
+  if(G.kills.length){
+    const c={};G.kills.forEach(k=>c[k]=(c[k]||0)+1);
+    const mx=Math.max(...Object.values(c));
+    const top=Object.keys(c).filter(k=>c[k]==mx);
+    t=+top[Math.floor(Math.random()*top.length)];
+  }
+  const deaths=[];
+  const madDoctorSaves=[];
+  G.madDoctorActions.forEach(v=>{
+    if(!G.alive[v.by])return;
+    if(t===v.t)madDoctorSaves.push(v.t);
+    else killPlayer(v.t,deaths);
+  });
+  if(t!==null&&!G.saves.includes(t)&&!madDoctorSaves.includes(t))killPlayer(t,deaths);
+  let ex=[];
+  G.reveals.forEach(v=>{if(G.alive[v.by])ex.push(`📰 기자의 기사: ${P(v.t)}의 직업은 <b>${RN[G.roles[v.t]]}</b>입니다.`)});
+  G.investigations.forEach(v=>{if(G.alive[v.by])ex.push(`🔎 탐정의 수사: ${G.nightAbilityUsed[v.t]?'O':'X'}`);});
+  G.snipes.forEach(v=>{if(!G.alive[v.by])return;if(G.roles[v.t]=='mafia'){if(G.alive[v.t]){const shot=[];killPlayer(v.t,shot);deaths.push(...shot)}}else{const shot=[];killPlayer(v.by,shot);deaths.push(...shot)}});
+  const muted=G.mutes.filter(j=>G.alive[j]);
+  const w=winner();
+  h(`<div class="card c"><div class="huge">☀️</div><h2>아침이 되었습니다</h2>
+  <p>${deaths.length?`사망한 플레이어: ${deaths.map(j=>`<b>${P(j)}</b>${C.reveal?` (${RN[G.roles[j]]})`:''}`).join(', ')}`:'간밤에 사망자는 없습니다.'}</p>${muted.length?`<p>오늘 발언·투표 금지: ${muted.map(P).join(', ')}</p>`:''}${ex.map(x=>`<p>${x}</p>`).join('')}
+  ${w?`<button class="btn" onclick="endGame('${w}')">결과 보기</button>`
+     :`<p class="sm">자유롭게 토론한 뒤 투표를 시작하세요.</p><button class="btn" onclick="voteStart()">투표 시작</button>`}</div>`);
+}
+
+/* 투표 */
+function voteStart(){G.votes=[];G.cur=0;G.second=false;G.pendingVote=null;voteNext()}
+function voteNext(){
+  let j=G.cur;
+  while(j<G.roles.length&&(!G.alive[j]||G.mutes.includes(j)))j++;
+  if(j>=G.roles.length)return voteResult();
+  G.sel=null;
+  pass(j,()=>voteAct(j),`🗳️ ${G.day}일차 투표 (${G.vote==='x'?'':C.vote=='public'?'공개':'비밀'})`);
+}
+function voteAct(i){
+  G.re=()=>voteAct(i);
+  const list=aliveList().filter(j=>C.self||j!=i);
+  const ab=`<button class="t ${G.sel===-1?'on':''}" onclick="G.sel=-1;G.re()">기권</button>`;
+  h(info(i)+`<div class="card"><p>처형할 사람에게 투표하세요</p>${targets(list,ab)}
+  <button class="btn" ${G.sel==null?'disabled':''} onclick="voteConfirm(${i})">투표 확정</button></div>`);
+}
+function voteConfirm(i){G.votes.push({f:i,t:G.sel});G.cur=i+1;voteNext()}
+function voteResult(){
+  const c={};let ab=0;
+  G.votes.forEach(v=>{if(v.t<0)ab++;else c[v.t]=(c[v.t]||0)+1});
+  const ks=Object.keys(c).map(Number).sort((a,b)=>c[b]-c[a]);
+  let out=null;
+  if(ks.length&&(ks.length==1||c[ks[0]]>c[ks[1]])&&c[ks[0]]>ab)out=effectTarget(ks[0]);
+  let failedExecution=null;
+  if(out!==null&&!skillSucceeds()){failedExecution=out;out=null}
+  const mayors=G.roles.map((r,i)=>r=='mayor'&&G.alive[i]&&!G.mu[i]?i:-1).filter(i=>i>=0);
+  if(mayors.length&&!G.second){
+    G.pendingVote={out,ab,ks,failedExecution,voteTarget:ks.length?ks[0]:null};
+    renderVoteReview();
+    return;
+  }
+  finalizeVoteResult(out,ab,ks,failedExecution);
+}
+function renderVoteReview(){
+  const {out,ab,ks,failedExecution,voteTarget}=G.pendingVote;
+  const c={};G.votes.forEach(v=>{if(v.t>=0)c[v.t]=(c[v.t]||0)+1});
+  const pub=C.vote=='public';
+  h(`<h2>🗳️ 투표 결과</h2><div class="card list">
+  ${pub?G.votes.map(v=>`<div>${P(v.f)} → ${v.t<0?'기권':P(v.t)}</div>`).join(''):''}
+  ${pub?'<div class="sm">— 집계 —</div>':''}
+  ${ks.map(k=>`<div>${P(k)}: ${c[k]}표</div>`).join('')}<div>기권: ${ab}표</div></div>
+  <div class="card c"><p>${out!==null?`투표 처형 대상: <b>${P(voteTarget)}</b>${voteTarget!==out?`의 효과를 문지기 <b>${P(out)}</b>가 대신 받습니다`:''}${C.reveal?` (직업: ${RN[G.roles[out]]})`:''}`:failedExecution!==null?`<b>${P(voteTarget)}</b> 플레이어는 처형 판정 실패로 살아남습니다.`:'동률이거나 기권이 많아 처형 대상이 없습니다.'}</p>
+  <button class="btn" onclick="requestMayorChoice(0)">🏛️ 이장의 권한 (재투표)</button>
+  <button class="btn g" onclick="finalizeVoteResult(G.pendingVote.out,G.pendingVote.ab,G.pendingVote.ks,G.pendingVote.failedExecution)">결과 확정</button></div>`);
+}
+function requestMayorChoice(index){
+  const mayors=G.roles.map((r,i)=>r=='mayor'&&G.alive[i]&&!G.mu[i]?i:-1).filter(i=>i>=0);
+  if(index>=mayors.length)return renderVoteReview();
+  const i=mayors[index];
+  pass(i,()=>mayorChoice(i,index),'🏛️ 이장의 권한');
+}
+function mayorChoice(i,index){
+  h(info(i)+`<div class="card"><p>재투표를 강행하면 현재 투표 결과가 무효가 되고 정체가 공개됩니다.</p>
+  <button class="btn" onclick="useMayor(${i})">이장의 권한 사용 · 재투표</button>
+  <button class="btn g" onclick="skipMayor(${index})">사용하지 않음</button></div>`);
+}
+function skipMayor(index){requestMayorChoice(index+1)}
+function useMayor(i){
+  G.mu[i]=1;
+  G.uses[i]++;
+  G.abilityUsed[i]=true;
+  G.second=true;
+  h(`<div class="card c"><div class="huge">🏛️</div><h2>이장의 권한 발동</h2><p><b>${P(i)}</b> 플레이어가 이장임을 공개하고 재투표를 강행했습니다.<br>방금 투표 결과는 무효입니다.</p><button class="btn" onclick="beginRevote()">재투표 시작</button></div>`);
+}
+function beginRevote(){
+  G.pendingVote=null;
+  G.votes=[];
+  G.cur=0;
+  voteNext();
+}
+function finalizeVoteResult(out,ab,ks,failedExecution=null){
+  const deaths=[];
+  if(out!==null)killPlayer(out,deaths);
+  if(out!==null&&G.roles[out]=='terrorist'){
+    G.skillResults[out]=skillSucceeds();
+    G.voteOutcome={out,ab,ks,deaths};
+    if(aliveList().length){
+      G.sel=null;
+      pass(out,()=>terroristAct(out),C.mode=='quack'?`💣 테러리스트 능력 판정: ${G.skillResults[out]?'성공':'실패'}`:'💣 테러리스트의 마지막 선택');
+      return;
+    }
+  }
+  const failedGoblin=out!==null&&G.roles[out]=='goblin'&&!skillSucceeds();
+  const goblinWin=out!==null&&G.roles[out]=='goblin'&&!failedGoblin;
+  if(goblinWin){G.abilityUsed[out]=true;G.uses[out]++}
+  showVoteResult(out,ab,ks,deaths,failedExecution,failedGoblin,goblinWin);
+}
+function terroristAct(i){
+  G.re=()=>terroristAct(i);
+  const list=aliveList().filter(j=>j!=i);
+  h(info(i)+`<div class="card"><p>함께 죽일 사람을 지목하세요</p>${C.mode=='quack'?G.skillResults[i]?'<p class="sm">돌팔이 판정 성공: 대상을 선택하면 능력이 발동합니다.</p>':'<p class="err">돌팔이 판정 실패: 이번 능력은 발동하지 않습니다.</p>':''}${targets(list)}
+  <button class="btn" ${G.sel==null?'disabled':''} onclick="terroristConfirm(${i})">지목 확정</button></div>`);
+}
+function terroristConfirm(i){
+  const target=G.sel;
+  const deaths=G.voteOutcome.deaths;
+  if(G.skillResults[i]){
+    G.abilityUsed[i]=true;
+    G.uses[i]++;
+    killPlayer(effectTarget(target),deaths);
+  }
+  showVoteResult(G.voteOutcome.out,G.voteOutcome.ab,G.voteOutcome.ks,deaths,null,false,false,!G.skillResults[i]);
+}
+function showVoteResult(out,ab,ks,deaths,failedExecution=null,failedGoblin=false,goblinWin=false,failedTerroristShot=false){
+  const c={};G.votes.forEach(v=>{if(v.t>=0)c[v.t]=(c[v.t]||0)+1});
+  const w=goblinWin?'goblin':winner();
+  const pub=C.vote=='public';
+  h(`<h2>🗳️ 투표 결과</h2><div class="card list">
+  ${pub?G.votes.map(v=>`<div>${P(v.f)} → ${v.t<0?'기권':P(v.t)}</div>`).join(''):''}
+  ${pub?'<div class="sm">— 집계 —</div>':''}
+  ${ks.map(k=>`<div>${P(k)}: ${c[k]}표</div>`).join('')}<div>기권: ${ab}표</div></div>
+  <div class="card c"><p>${out!==null?`<b>${P(out)}</b> 플레이어가 처형되었습니다.${C.reveal?`<br>직업: <b>${RN[G.roles[out]]}</b>`:''}`:failedExecution!==null?`<b>${P(failedExecution)}</b> 플레이어는 투표에서 지목됐지만 처형 판정 실패로 살아남았습니다.`:'동률이거나 기권이 많아 아무도 처형되지 않았습니다.'}${failedTerroristShot?'<br>테러리스트 능력이 발동하지 않았습니다.':''}${failedGoblin?'<br>광대의 승리 능력이 발동하지 않았습니다.':''}${deaths.length>1?`<br>함께 사망: ${deaths.slice(1).map(j=>`<b>${P(j)}</b>${C.reveal?` (${RN[G.roles[j]]})`:''}`).join(', ')}`:''}</p>
+  ${w?`<button class="btn" onclick="endGame('${w}')">결과 보기</button>`
+     :`<button class="btn" onclick="nextNight()">밤으로</button>`}</div>`);
+}
+function nextNight(){G.day++;G.kills=[];G.saves=[];G.mutes=[];G.guards=[];G.madDoctorActions=[];G.skillResults.fill(null);G.nightAbilityUsed.fill(false);G.reveals=[];G.investigations=[];G.snipes=[];G.cur=0;nightNext()}
+
+/* 종료 */
+function endGame(w){G.over=true;
+  h(`<div class="card c"><div class="huge">${w=='goblin'?'🤡':w=='mafia'?'🔪':'🎉'}</div>
+  <div class="win">${w=='goblin'?'광대 승리!':w=='mafia'?'마피아 승리!':w=='couple'?'커플 승리!':'시민 승리!'}</div></div>
+  <div class="card list"><b>전체 직업</b>${G.roles.map((r,j)=>`<div>${P(j)} · <span class="role ${r}">${RN[r]}</span> ${G.alive[j]?'':'<span class="sm">(사망)</span>'}</div>`).join('')}</div>
+  <button class="btn" onclick="setup()">같은 설정으로 다시 하기</button>
+  <button class="btn g" onclick="modeScreen()">처음으로</button>`);
+}
+
+modeScreen();
+</script>
+</body>
+</html>
